@@ -1,0 +1,39 @@
+Package: syntheticdata
+Title: Synthetic Clinical Data Generation and Privacy-Preserving Validation
+Version: 0.1.0
+Authors@R:
+    person("Cuiwei", "Gao", , "48gaocuiwei@gmail.com",
+    role = c("aut", "cre", "cph"))
+Description: Generates synthetic clinical datasets that preserve
+    statistical properties while protecting patient privacy. Implements
+    parametric resampling, conditional distribution modeling, and noise
+    injection methods with built-in utility and privacy metrics.
+    Designed for GDPR and HIPAA compliant data sharing in multi-site
+    clinical research. Validates synthetic data quality via distributional
+    similarity, discriminative accuracy, and downstream model fidelity.
+    Methods described in Jordon et al. (2022)
+    <doi:10.1038/s42256-022-00534-z>.
+License: MIT + file LICENSE
+URL: https://github.com/CuiweiG/syntheticdata
+BugReports: https://github.com/CuiweiG/syntheticdata/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli (>= 3.4.0),
+    dplyr (>= 1.1.0),
+    ggplot2 (>= 3.4.0),
+    MASS,
+    rlang (>= 1.1.0),
+    stats,
+    tibble (>= 3.1.0)
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Language: en-US
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
