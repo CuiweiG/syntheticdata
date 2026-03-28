@@ -18,11 +18,19 @@ statistical properties while reducing re-identification risk.
 Useful for privacy-aware data sharing in multi-site clinical
 research.
 
-- **Methods**: Gaussian copula (parametric), bootstrap with noise,
-  Laplace noise perturbation
+- **Generation**: Gaussian copula, bootstrap with noise, Laplace
+  noise perturbation
 - **Validation**: distributional fidelity (KS), correlation
-  preservation, discriminative accuracy, nearest-neighbor privacy
-- **Two core functions**: `synthesize()` + `validate_synthetic()`
+  preservation, discriminative accuracy
+- **Privacy assessment**: nearest-neighbor distance ratio,
+  membership inference, attribute disclosure risk
+- **Benchmarking**: `compare_methods()` runs all methods on the
+  same data; `model_fidelity()` measures train-on-synthetic,
+  test-on-real predictive performance
+
+Unlike `synthpop` (survey data) or `simPop` (census microsimulation),
+`syntheticdata` integrates generation with privacy-utility validation
+in a single lightweight framework oriented toward clinical research.
 
 ---
 
