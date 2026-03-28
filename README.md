@@ -2,7 +2,7 @@
 
 # syntheticdata
 
-*Privacy-Preserving Synthetic Clinical Data Generation and Validation*
+*Synthetic Clinical Data Generation with Privacy-Utility Validation*
 
 [![R-CMD-check](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -14,15 +14,15 @@
 ## Overview
 
 `syntheticdata` generates synthetic clinical datasets that preserve
-statistical properties while protecting patient privacy. Designed
-for GDPR/HIPAA-compliant data sharing in multi-site clinical
+statistical properties while reducing re-identification risk.
+Useful for privacy-aware data sharing in multi-site clinical
 research.
 
-- **Methods**: Gaussian copula (parametric), bootstrap resampling,
-  Laplace noise (differential privacy)
+- **Methods**: Gaussian copula (parametric), bootstrap with noise,
+  Laplace noise perturbation
 - **Validation**: distributional fidelity (KS), correlation
   preservation, discriminative accuracy, nearest-neighbor privacy
-- **One function in, one function out**: `synthesize()` + `validate_synthetic()`
+- **Two core functions**: `synthesize()` + `validate_synthetic()`
 
 ---
 
