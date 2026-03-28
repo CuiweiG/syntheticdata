@@ -51,6 +51,28 @@ in a single lightweight framework oriented toward clinical research.
 
 ---
 
+## Why syntheticdata?
+
+| Package | Focus | syntheticdata difference |
+|---------|-------|-------------------------|
+| `synthpop` | Survey/census data (CART-based) | syntheticdata targets clinical data with Gaussian copula preserving correlation structure |
+| `simPop` | Population microsimulation | syntheticdata integrates privacy metrics (NN ratio, membership inference) |
+| `simstudy` | Simulation for trials | syntheticdata generates from real data, not from specified distributions |
+
+The gap: **no CRAN package combines generation + privacy assessment
++ downstream model fidelity testing in one workflow.** Existing
+tools either generate without validating, or validate without
+privacy-aware metrics.
+
+```r
+# Complete workflow in 3 lines
+syn <- synthesize(clinical_data, method = "parametric")
+privacy_risk(syn, sensitive_cols = c("diagnosis", "age"))
+model_fidelity(syn, outcome = "readmission")
+```
+
+---
+
 ## Installation
 
 ```r
