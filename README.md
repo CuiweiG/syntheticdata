@@ -72,6 +72,9 @@ validate_synthetic(syn)
 |----------|-------------|
 | `synthesize()` | Generate synthetic data (parametric / bootstrap / noise) |
 | `validate_synthetic()` | Compute utility and privacy metrics (KS, AUC, NN ratio) |
+| `compare_methods()` | Benchmark all 3 methods on the same dataset |
+| `privacy_risk()` | Assess re-identification risk (NN ratio, membership inference, attribute disclosure) |
+| `model_fidelity()` | Train-on-synthetic, test-on-real predictive model comparison |
 
 ---
 
