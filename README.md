@@ -66,6 +66,15 @@ syn
 validate_synthetic(syn)
 ```
 
+## Functions
+
+| Function | Description |
+|----------|-------------|
+| `synthesize()` | Generate synthetic data (parametric / bootstrap / noise) |
+| `validate_synthetic()` | Compute utility and privacy metrics (KS, AUC, NN ratio) |
+
+---
+
 ## Key references
 
 - Jordon J et al. (2022). Synthetic Data -- what, why and how?
