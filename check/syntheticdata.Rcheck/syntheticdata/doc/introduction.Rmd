@@ -1,0 +1,102 @@
+---
+title: "Generating and validating synthetic clinical data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Generating and validating synthetic clinical data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Motivation
+
+Sharing individual-level clinical data across institutions is often
+restricted by privacy regulations and institutional review boards.
+Synthetic data preserves the statistical properties of real data while
+reducing re-identification risk, enabling multi-site collaboration
+without data transfer.
+
+## Example: synthesizing patient records
+
+```{r setup}
+library(syntheticdata)
+```
+
+```{r real-data}
+set.seed(42)
+real <- data.frame(
+  age     = rnorm(500, mean = 65, sd = 12),
+  sbp     = rnorm(500, mean = 135, sd = 22),
+  sex     = sample(c("Male", "Female"), 500, replace = TRUE),
+  smoking = sample(c("Never", "Former", "Current"), 500,
+                   replace = TRUE, prob = c(0.4, 0.35, 0.25)),
+  outcome = rbinom(500, 1, 0.28)
+)
+head(real)
+```
+
+## Parametric synthesis (Gaussian copula)
+
+The default method estimates marginal distributions empirically and
+captures the joint dependence structure via a Gaussian copula on
+normal scores. This preserves both marginal shapes and pairwise
+correlations.
+
+```{r synthesize}
+syn <- synthesize(real, method = "parametric", n = 500, seed = 1)
+syn
+```
+
+## Validation
+
+`validate_synthetic()` computes four classes of metrics:
+
+```{r validate}
+val <- validate_synthetic(syn)
+val
+```
+
+- **KS statistic**: distributional similarity (lower = better)
+- **Correlation difference**: preservation of variable associations
+- **Discriminative AUC**: can a classifier distinguish real from
+  synthetic? Values near 0.5 mean indistinguishable.
+- **NN distance ratio**: privacy metric. Values > 1 indicate
+  synthetic records are not memorizing real individuals.
+
+## Comparing methods
+
+```{r compare}
+syn_boot  <- synthesize(real, method = "bootstrap", seed = 2)
+syn_noise <- synthesize(real, method = "noise", noise_level = 0.2, seed = 3)
+
+val_boot  <- validate_synthetic(syn_boot)
+val_noise <- validate_synthetic(syn_noise)
+
+comparison <- rbind(
+  transform(as.data.frame(val),       method = "parametric"),
+  transform(as.data.frame(val_boot),  method = "bootstrap"),
+  transform(as.data.frame(val_noise), method = "noise")
+)
+comparison[, c("method", "metric", "value", "interpretation")]
+```
+
+## Privacy-utility trade-off
+
+Higher `noise_level` improves privacy but reduces utility:
+
+```{r tradeoff}
+results <- list()
+for (nl in c(0.05, 0.1, 0.2, 0.5)) {
+  s <- synthesize(real, method = "noise", noise_level = nl, seed = 1)
+  v <- validate_synthetic(s)
+  results <- c(results, list(data.frame(
+    noise_level = nl,
+    ks = v$value[v$metric == "ks_statistic_mean"],
+    privacy = v$value[v$metric == "nn_distance_ratio"]
+  )))
+}
+do.call(rbind, results)
+```

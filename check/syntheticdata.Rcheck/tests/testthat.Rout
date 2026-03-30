@@ -1,0 +1,58 @@
+
+R version 4.5.3 (2026-03-11 ucrt) -- "Reassured Reassurer"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(syntheticdata)
+> test_check("syntheticdata")
+
+-- Synthesis method comparison 
+# A tibble: 12 x 4
+   method     metric               value interpretation   
+ * <chr>      <chr>                <dbl> <chr>            
+ 1 parametric ks_statistic_mean  0.106   Acceptable       
+ 2 parametric correlation_diff   0.0140  Excellent        
+ 3 parametric discriminative_auc 0.534   Indistinguishable
+ 4 parametric nn_distance_ratio  0.725   Moderate risk    
+ 5 bootstrap  ks_statistic_mean  0.0938  Good fidelity    
+ 6 bootstrap  correlation_diff   0.00990 Excellent        
+ 7 bootstrap  discriminative_auc 0.535   Indistinguishable
+ 8 bootstrap  nn_distance_ratio  0.484   High risk        
+ 9 noise      ks_statistic_mean  0.0938  Good fidelity    
+10 noise      correlation_diff   0.00969 Excellent        
+11 noise      discriminative_auc 0.530   Indistinguishable
+12 noise      nn_distance_ratio  0.514   Moderate risk    
+
+-- Privacy risk assessment 
+⚠️ nn_distance_ratio: 0.9918 (Medium)
+✅ membership_inference_acc: 0.475 (Low)
+
+-- Synthetic data (parametric) 
+100 real -> 100 synthetic records
+Variables: age, sbp, sex
+
+-- Synthetic data validation 
+ks_statistic_mean: 0.1 (Acceptable)
+correlation_diff: 0.0063 (Excellent)
+discriminative_auc: 0.5142 (Indistinguishable)
+nn_distance_ratio: 0.9918 (Moderate risk)
+[ FAIL 0 | WARN 1 | SKIP 0 | PASS 29 ]
+
+[ FAIL 0 | WARN 1 | SKIP 0 | PASS 29 ]
+> 
+> proc.time()
+   user  system elapsed 
+   0.93    0.26    1.25 

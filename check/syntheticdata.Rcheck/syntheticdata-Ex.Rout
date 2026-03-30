@@ -1,0 +1,211 @@
+
+R version 4.5.3 (2026-03-11 ucrt) -- "Reassured Reassurer"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "syntheticdata"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> options(pager = "console")
+> base::assign(".ExTimings", "syntheticdata-Ex.timings", pos = 'CheckExEnv')
+> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+> base::assign(".format_ptime",
++ function(x) {
++   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
++   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
++   options(OutDec = '.')
++   format(x[1L:3L], digits = 7L)
++ },
++ pos = 'CheckExEnv')
+> 
+> ### * </HEADER>
+> library('syntheticdata')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("compare_methods")
+> ### * compare_methods
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: compare_methods
+> ### Title: Compare multiple synthesis methods
+> ### Aliases: compare_methods
+> 
+> ### ** Examples
+> 
+> set.seed(42)
+> real <- data.frame(x = rnorm(100), y = rnorm(100))
+> compare_methods(real, seed = 42)
+
+── Synthesis method comparison 
+# A tibble: 12 × 4
+   method     metric              value interpretation   
+ * <chr>      <chr>               <dbl> <chr>            
+ 1 parametric ks_statistic_mean  0.085  Good fidelity    
+ 2 parametric correlation_diff   0.0263 Excellent        
+ 3 parametric discriminative_auc 0.532  Indistinguishable
+ 4 parametric nn_distance_ratio  0.889  Moderate risk    
+ 5 bootstrap  ks_statistic_mean  0.08   Good fidelity    
+ 6 bootstrap  correlation_diff   0.122  Poor             
+ 7 bootstrap  discriminative_auc 0.509  Indistinguishable
+ 8 bootstrap  nn_distance_ratio  0.562  Moderate risk    
+ 9 noise      ks_statistic_mean  0.085  Good fidelity    
+10 noise      correlation_diff   0.120  Poor             
+11 noise      discriminative_auc 0.502  Indistinguishable
+12 noise      nn_distance_ratio  0.622  Moderate risk    
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("compare_methods", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("model_fidelity")
+> ### * model_fidelity
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: model_fidelity
+> ### Title: Downstream model fidelity test
+> ### Aliases: model_fidelity
+> 
+> ### ** Examples
+> 
+> set.seed(42)
+> real <- data.frame(
++     x1 = rnorm(200), x2 = rnorm(200),
++     y = rbinom(200, 1, 0.3))
+> syn <- synthesize(real, seed = 42)
+> model_fidelity(syn, outcome = "y")
+Warning in eval(family$initialize) :
+  non-integer #successes in a binomial glm!
+# A tibble: 2 × 3
+  train_data metric value
+  <chr>      <chr>  <dbl>
+1 real       auc    0.577
+2 synthetic  auc    0.438
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("model_fidelity", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("privacy_risk")
+> ### * privacy_risk
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: privacy_risk
+> ### Title: Compute privacy risk metrics
+> ### Aliases: privacy_risk
+> 
+> ### ** Examples
+> 
+> set.seed(42)
+> real <- data.frame(age = rnorm(100, 65, 10),
++                    sbp = rnorm(100, 130, 20))
+> syn <- synthesize(real, seed = 42)
+> privacy_risk(syn)
+
+── Privacy risk assessment 
+⚠️ nn_distance_ratio: 0.8892 (Medium)
+✅ membership_inference_acc: 0.535 (Low)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("privacy_risk", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("synthesize")
+> ### * synthesize
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: synthesize
+> ### Title: Generate synthetic data from a real dataset
+> ### Aliases: synthesize
+> 
+> ### ** Examples
+> 
+> set.seed(42)
+> real <- data.frame(
++   age = rnorm(200, 65, 10),
++   sbp = rnorm(200, 130, 20),
++   sex = sample(c("M", "F"), 200, replace = TRUE),
++   outcome = rbinom(200, 1, 0.3)
++ )
+> syn <- synthesize(real, method = "parametric", seed = 42)
+> syn
+
+── Synthetic data (parametric) 
+200 real -> 200 synthetic records
+Variables: age, sbp, sex, outcome
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("synthesize", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("validate_synthetic")
+> ### * validate_synthetic
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: validate_synthetic
+> ### Title: Validate synthetic data quality
+> ### Aliases: validate_synthetic
+> 
+> ### ** Examples
+> 
+> set.seed(42)
+> real <- data.frame(age = rnorm(100, 65, 10), sbp = rnorm(100, 130, 20))
+> syn <- synthesize(real, seed = 42)
+> validate_synthetic(syn)
+
+── Synthetic data validation 
+ks_statistic_mean: 0.085 (Good fidelity)
+correlation_diff: 0.0263 (Excellent)
+discriminative_auc: 0.5319 (Indistinguishable)
+nn_distance_ratio: 0.8892 (Moderate risk)
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("validate_synthetic", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> ### * <FOOTER>
+> ###
+> cleanEx()
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  0.87 0.1 1.12 NA NA 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')
