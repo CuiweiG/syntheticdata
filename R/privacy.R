@@ -129,8 +129,8 @@ print.privacy_assessment <- function(x, ...) {
   cli::cli_h3("Privacy risk assessment")
   for (i in seq_len(nrow(x))) {
     icon <- switch(x$risk_level[i],
-      Low = "\u2705", Medium = "\u26A0\uFE0F",
-      High = "\u274C", "\u2753")
+      Low = "[OK]", Medium = "[!]",
+      High = "[X]", "[?]")
     cli::cli_text(
       "  {icon} {x$metric[i]}: {round(x$value[i], 4)} ({x$risk_level[i]})"
     )

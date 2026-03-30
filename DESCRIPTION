@@ -6,14 +6,14 @@ Authors@R:
     role = c("aut", "cre", "cph"))
 Description: Generates synthetic clinical datasets that preserve
     statistical properties while reducing re-identification risk.
-    Implements Gaussian copula resampling, bootstrap with noise
+    Implements Gaussian copula simulation, bootstrap with noise
     injection, and Laplace noise perturbation, with built-in utility
     and privacy validation metrics. Useful for privacy-aware data
     sharing in multi-site clinical research. Validates synthetic data
     quality via distributional similarity (Kolmogorov-Smirnov),
     discriminative accuracy (real-vs-synthetic classifier), and
     nearest-neighbor privacy ratio. Methods described in Jordon et al.
-    (2022) <doi:10.1038/s42256-022-00534-z> and Snoke et al. (2018)
+    (2022) <doi:10.48550/arXiv.2205.03257> and Snoke et al. (2018)
     <doi:10.1111/rssa.12358>.
 License: MIT + file LICENSE
 URL: https://github.com/CuiweiG/syntheticdata

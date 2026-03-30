@@ -111,7 +111,7 @@ validate_synthetic(syn)
 ## Key references
 
 - Jordon J et al. (2022). Synthetic Data -- what, why and how?
-  *Nat Mach Intell* 4:805. doi:10.1038/s42256-022-00534-z
+  *arXiv preprint* arXiv:2205.03257. doi:10.48550/arXiv.2205.03257
 - Snoke J et al. (2018). General and specific utility measures
   for synthetic data. *JRSS-A* 181:663. doi:10.1111/rssa.12358
 

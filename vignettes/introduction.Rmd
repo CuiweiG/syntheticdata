@@ -59,29 +59,47 @@ val <- validate_synthetic(syn)
 val
 ```
 
-- **KS statistic**: distributional similarity (lower = better)
-- **Correlation difference**: preservation of variable associations
+- **KS statistic**: distributional similarity (lower is better).
+- **Correlation difference**: preservation of variable associations.
 - **Discriminative AUC**: can a classifier distinguish real from
   synthetic? Values near 0.5 mean indistinguishable.
-- **NN distance ratio**: privacy metric. Values > 1 indicate
+- **NN distance ratio**: privacy metric. Values above 1 indicate
   synthetic records are not memorizing real individuals.
 
 ## Comparing methods
 
+`compare_methods()` runs all three synthesis methods on the same
+data and returns a single comparison table:
+
 ```{r compare}
-syn_boot  <- synthesize(real, method = "bootstrap", seed = 2)
-syn_noise <- synthesize(real, method = "noise", noise_level = 0.2, seed = 3)
-
-val_boot  <- validate_synthetic(syn_boot)
-val_noise <- validate_synthetic(syn_noise)
-
-comparison <- rbind(
-  transform(as.data.frame(val),       method = "parametric"),
-  transform(as.data.frame(val_boot),  method = "bootstrap"),
-  transform(as.data.frame(val_noise), method = "noise")
-)
-comparison[, c("method", "metric", "value", "interpretation")]
+comp <- compare_methods(real, seed = 1)
+comp
 ```
+
+## Privacy risk assessment
+
+`privacy_risk()` provides a deeper privacy audit with three metrics:
+nearest-neighbor distance ratio, membership inference accuracy, and
+(optionally) attribute disclosure risk for sensitive columns.
+
+```{r privacy}
+pr <- privacy_risk(syn, sensitive_cols = "age")
+pr
+```
+
+## Downstream model fidelity
+
+`model_fidelity()` trains a predictive model on synthetic data and
+evaluates it on real data. The real-data baseline uses in-sample
+evaluation as an upper bound.
+
+```{r fidelity}
+mf <- model_fidelity(syn, outcome = "outcome")
+mf
+```
+
+A synthetic-trained model with AUC close to the real-trained baseline
+indicates that the synthetic data preserves the predictive signal.
 
 ## Privacy-utility trade-off
 

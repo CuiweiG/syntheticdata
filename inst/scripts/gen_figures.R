@@ -2,7 +2,7 @@ devtools::load_all(".", quiet = TRUE)
 library(ggplot2)
 library(patchwork)
 
-## Use R's built-in iris dataset — real data published by
+## Use R's built-in iris dataset - real data published by
 ## Fisher RA (1936). Annals of Eugenics 7:179-188.
 real <- iris[, c("Sepal.Length", "Sepal.Width", "Petal.Length",
                   "Petal.Width", "Species")]
@@ -16,7 +16,7 @@ od <- "man/figures"
 pal <- c(Real = "#0072B2", Synthetic = "#D55E00")
 
 ## ============================================================
-## Fig 1: Distributional fidelity — paired density overlays
+## Fig 1: Distributional fidelity - paired density overlays
 ## ============================================================
 num_cols <- c("Sepal.Length", "Sepal.Width",
               "Petal.Length", "Petal.Width")
@@ -70,7 +70,7 @@ pb <- ggplot(cor_df, aes(x = real_cor, y = syn_cor)) +
     theme(panel.grid = element_blank())
 
 ## ============================================================
-## Fig 1c: Privacy — nearest-neighbor distance
+## Fig 1c: Privacy - nearest-neighbor distance
 ## ============================================================
 ## Use validation result
 privacy_ratio <- val$value[val$metric == "nn_distance_ratio"]

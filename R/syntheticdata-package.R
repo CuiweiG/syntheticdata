@@ -4,7 +4,7 @@
 #' @description
 #' Generates synthetic clinical datasets that preserve statistical
 #' properties while reducing re-identification risk. Implements
-#' Gaussian copula resampling, bootstrap with noise injection, and
+#' Gaussian copula simulation, bootstrap with noise injection, and
 #' Laplace noise perturbation, with built-in utility and privacy
 #' validation metrics.
 #'

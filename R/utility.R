@@ -14,6 +14,18 @@
 #'   For binary outcomes the metric is AUC; for continuous outcomes
 #'   it is R-squared.
 #'
+#' @details
+#' The real-data baseline uses in-sample evaluation (train and test
+#' on the same real data) to provide an upper bound on achievable
+#' performance. The synthetic-data model is also evaluated on real
+#' data, so the comparison reflects how well the synthetic data
+#' preserves predictive signal.
+#'
+#' @references
+#' Jordon J, et al. (2022). Synthetic Data -- what, why and how?
+#' \emph{arXiv preprint} arXiv:2205.03257.
+#' \doi{10.48550/arXiv.2205.03257}
+#'
 #' @export
 #' @examples
 #' set.seed(42)

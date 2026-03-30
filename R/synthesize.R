@@ -18,9 +18,10 @@
 #'   global RNG state is saved before and restored after synthesis
 #'   so that calling code is not affected.
 #'
-#' @return A `synthetic_data` object (list) with:
-#'   `$synthetic` (tibble), `$method`, `$n_original`, `$n_synthetic`,
-#'   `$variables`.
+#' @return A `synthetic_data` object (list) with components:
+#'   `$synthetic` (tibble of synthetic records), `$real` (tibble of
+#'   the original data, retained for downstream validation),
+#'   `$method`, `$n_original`, `$n_synthetic`, `$variables`.
 #'
 #' @details
 #' The parametric method uses a Gaussian copula approach: marginal
@@ -31,8 +32,8 @@
 #'
 #' @references
 #' Jordon J, et al. (2022). Synthetic Data -- what, why and how?
-#' \emph{Nature Machine Intelligence}, 4:805--813.
-#' \doi{10.1038/s42256-022-00534-z}
+#' \emph{arXiv preprint} arXiv:2205.03257.
+#' \doi{10.48550/arXiv.2205.03257}
 #'
 #' @examples
 #' set.seed(42)
@@ -142,7 +143,8 @@ synthesize <- function(data, method = c("parametric", "bootstrap", "noise"),
   rownames(syn) <- NULL
   for (col in names(data)[num_cols]) {
     scale_param <- noise_level * sd(data[[col]])
-    u <- runif(n) - 0.5
+    u <- runif(n, min = -0.5 + .Machine$double.eps,
+                  max =  0.5 - .Machine$double.eps)
     noise <- -scale_param * sign(u) * log(1 - 2 * abs(u))
     syn[[col]] <- syn[[col]] + noise
   }

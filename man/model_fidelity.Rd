@@ -25,6 +25,13 @@ on real data. Compares to a model trained on real data (gold
 standard). Measures whether synthetic data preserves
 predictive signal.
 }
+\details{
+The real-data baseline uses in-sample evaluation (train and test
+on the same real data) to provide an upper bound on achievable
+performance. The synthetic-data model is also evaluated on real
+data, so the comparison reflects how well the synthetic data
+preserves predictive signal.
+}
 \examples{
 set.seed(42)
 real <- data.frame(
@@ -32,4 +39,9 @@ real <- data.frame(
     y = rbinom(200, 1, 0.3))
 syn <- synthesize(real, seed = 42)
 model_fidelity(syn, outcome = "y")
+}
+\references{
+Jordon J, et al. (2022). Synthetic Data -- what, why and how?
+\emph{arXiv preprint} arXiv:2205.03257.
+\doi{10.48550/arXiv.2205.03257}
 }

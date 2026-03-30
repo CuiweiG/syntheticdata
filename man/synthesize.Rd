@@ -34,9 +34,10 @@ global RNG state is saved before and restored after synthesis
 so that calling code is not affected.}
 }
 \value{
-A \code{synthetic_data} object (list) with:
-\verb{$synthetic} (tibble), \verb{$method}, \verb{$n_original}, \verb{$n_synthetic},
-\verb{$variables}.
+A \code{synthetic_data} object (list) with components:
+\verb{$synthetic} (tibble of synthetic records), \verb{$real} (tibble of
+the original data, retained for downstream validation),
+\verb{$method}, \verb{$n_original}, \verb{$n_synthetic}, \verb{$variables}.
 }
 \description{
 Creates a synthetic version of the input data that preserves
@@ -64,6 +65,6 @@ syn
 }
 \references{
 Jordon J, et al. (2022). Synthetic Data -- what, why and how?
-\emph{Nature Machine Intelligence}, 4:805--813.
-\doi{10.1038/s42256-022-00534-z}
+\emph{arXiv preprint} arXiv:2205.03257.
+\doi{10.48550/arXiv.2205.03257}
 }
