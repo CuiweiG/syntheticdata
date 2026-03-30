@@ -49,45 +49,45 @@ validate_synthetic <- function(x,
   results <- list()
 
   if ("distributional" %in% metrics && any(num_cols)) {
-    ks_vals <- numeric()
-    for (col in names(real)[num_cols]) {
-      ks <- stats::ks.test(real[[col]], syn[[col]])$statistic
-      ks_vals <- c(ks_vals, ks)
-    }
+    ks_vals <- vapply(names(real)[num_cols], function(col) {
+      suppressWarnings(ks.test(real[[col]], syn[[col]])$statistic)
+    }, numeric(1))
     results <- c(results, list(tibble::tibble(
       metric = "ks_statistic_mean",
-      value  = mean(ks_vals),
+      value  = unname(mean(ks_vals)),
       interpretation = ifelse(mean(ks_vals) < 0.1, "Good fidelity",
                        ifelse(mean(ks_vals) < 0.2, "Acceptable", "Poor"))
     )))
   }
 
   if ("correlation" %in% metrics && sum(num_cols) >= 2) {
-    cor_real <- stats::cor(real[, num_cols, drop = FALSE], use = "complete.obs")
-    cor_syn  <- stats::cor(syn[, num_cols, drop = FALSE], use = "complete.obs")
+    cor_real <- cor(real[, num_cols, drop = FALSE], use = "complete.obs")
+    cor_syn  <- cor(syn[, num_cols, drop = FALSE], use = "complete.obs")
     frob <- sqrt(sum((cor_real - cor_syn)^2)) / length(cor_real)
     results <- c(results, list(tibble::tibble(
       metric = "correlation_diff",
       value  = frob,
-      interpretation = ifelse(frob < 0.05, "Excellent", ifelse(frob < 0.1, "Good", "Poor"))
+      interpretation = ifelse(frob < 0.05, "Excellent",
+                       ifelse(frob < 0.1, "Good", "Poor"))
     )))
   }
 
   if ("discriminative" %in% metrics && any(num_cols)) {
-    n_real <- nrow(real); n_syn <- nrow(syn)
     combined <- rbind(
       data.frame(real[, num_cols, drop = FALSE], .label = 1L),
       data.frame(syn[, num_cols, drop = FALSE], .label = 0L)
     )
-    # Simple logistic discriminator
     fit <- tryCatch(
-      stats::glm(.label ~ ., data = combined, family = stats::binomial()),
-      error = function(e) NULL
+      glm(.label ~ ., data = combined, family = binomial()),
+      error = function(e) NULL, warning = function(w) {
+        suppressWarnings(glm(.label ~ ., data = combined,
+                              family = binomial()))
+      }
     )
     if (!is.null(fit)) {
-      pred <- stats::predict(fit, type = "response")
+      pred <- predict(fit, type = "response")
       lab  <- combined$.label
-      auc  <- .compute_auc_simple(pred, lab)
+      auc  <- .compute_auc(pred, lab)
     } else {
       auc <- 0.5
     }
@@ -95,38 +95,34 @@ validate_synthetic <- function(x,
       metric = "discriminative_auc",
       value  = auc,
       interpretation = ifelse(abs(auc - 0.5) < 0.05, "Indistinguishable",
-                       ifelse(abs(auc - 0.5) < 0.1, "Acceptable", "Distinguishable"))
+                       ifelse(abs(auc - 0.5) < 0.1, "Acceptable",
+                              "Distinguishable"))
     )))
   }
 
   if ("privacy" %in% metrics && any(num_cols)) {
-    # Nearest-neighbor distance ratio
     real_mat <- as.matrix(real[, num_cols, drop = FALSE])
     syn_mat  <- as.matrix(syn[, num_cols, drop = FALSE])
-    # Scale
-    sds <- apply(real_mat, 2, stats::sd)
+    sds <- apply(real_mat, 2, sd)
     sds[sds == 0] <- 1
     real_sc <- scale(real_mat, center = TRUE, scale = sds)
     syn_sc  <- scale(syn_mat, center = colMeans(real_mat), scale = sds)
 
-    # Sample for speed
     n_sample <- min(200L, nrow(real_sc), nrow(syn_sc))
     ri <- sample(nrow(real_sc), n_sample)
     si <- sample(nrow(syn_sc), n_sample)
 
-    # Min distance from synthetic to real
-    d_sr <- numeric(n_sample)
-    for (i in seq_len(n_sample)) {
+    d_sr <- vapply(seq_len(n_sample), function(i) {
       diffs <- sweep(real_sc, 2, syn_sc[si[i], ])
-      d_sr[i] <- min(sqrt(rowSums(diffs^2)))
-    }
-    # Min distance from real to real (excluding self)
-    d_rr <- numeric(n_sample)
-    for (i in seq_len(n_sample)) {
+      min(sqrt(rowSums(diffs^2)))
+    }, numeric(1))
+
+    d_rr <- vapply(seq_len(n_sample), function(i) {
       diffs <- sweep(real_sc[-ri[i], , drop = FALSE], 2, real_sc[ri[i], ])
-      d_rr[i] <- min(sqrt(rowSums(diffs^2)))
-    }
-    ratio <- stats::median(d_sr) / stats::median(d_rr)
+      min(sqrt(rowSums(diffs^2)))
+    }, numeric(1))
+
+    ratio <- median(d_sr) / median(d_rr)
     results <- c(results, list(tibble::tibble(
       metric = "nn_distance_ratio",
       value  = ratio,
@@ -139,9 +135,11 @@ validate_synthetic <- function(x,
   structure(out, class = c("synthetic_validation", class(tibble::tibble())))
 }
 
+#' Compute AUC via Wilcoxon-Mann-Whitney statistic
 #' @noRd
-.compute_auc_simple <- function(pred, lab) {
-  n1 <- sum(lab == 1); n0 <- sum(lab == 0)
+.compute_auc <- function(pred, lab) {
+  n1 <- sum(lab == 1)
+  n0 <- sum(lab == 0)
   if (n1 == 0 || n0 == 0) return(0.5)
   r <- rank(pred)
   (sum(r[lab == 1]) - n1 * (n1 + 1) / 2) / (n1 * n0)
@@ -151,7 +149,9 @@ validate_synthetic <- function(x,
 print.synthetic_validation <- function(x, ...) {
   cli::cli_h3("Synthetic data validation")
   for (i in seq_len(nrow(x))) {
-    cli::cli_text("  {x$metric[i]}: {round(x$value[i], 4)} ({x$interpretation[i]})")
+    cli::cli_text(
+      "  {x$metric[i]}: {round(x$value[i], 4)} ({x$interpretation[i]})"
+    )
   }
   invisible(x)
 }

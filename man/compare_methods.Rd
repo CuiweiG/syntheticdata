@@ -4,18 +4,18 @@
 \alias{compare_methods}
 \title{Compare multiple synthesis methods}
 \usage{
-compare_methods(data, n = nrow(data), seed = 42)
+compare_methods(data, n = nrow(data), seed = NULL)
 }
 \arguments{
 \item{data}{A data frame of real data.}
 
 \item{n}{Number of synthetic records. Default: same as input.}
 
-\item{seed}{Random seed.}
+\item{seed}{Random seed passed to \code{\link[=synthesize]{synthesize()}}.}
 }
 \value{
-A tibble with columns: method, metric, value,
-interpretation.
+A \code{method_comparison} object (tibble) with columns:
+\code{method}, \code{metric}, \code{value}, \code{interpretation}.
 }
 \description{
 Runs all three synthesis methods on the same data and returns
@@ -24,7 +24,7 @@ a comparative validation table.
 \examples{
 set.seed(42)
 real <- data.frame(x = rnorm(100), y = rnorm(100))
-compare_methods(real)
+compare_methods(real, seed = 42)
 }
 \references{
 Jordon J, et al. (2022). Synthetic Data -- what, why and how?

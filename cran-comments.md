@@ -2,7 +2,6 @@
 0 errors | 0 warnings | 0 notes
 
 ## Test environments
-* local Windows 10, R 4.4.3
 * GitHub Actions: ubuntu-latest, macos-latest, windows-latest (R release)
 
 ## Reverse dependencies

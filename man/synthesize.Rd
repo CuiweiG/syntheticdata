@@ -29,7 +29,9 @@ variables, multinomial to categorical. Fast, interpretable.
 \item{noise_level}{For \code{method = "noise"}: scale of Laplace noise
 relative to variable SD. Default 0.1.}
 
-\item{seed}{Random seed for reproducibility.}
+\item{seed}{Random seed for reproducibility. If non-NULL, the
+global RNG state is saved before and restored after synthesis
+so that calling code is not affected.}
 }
 \value{
 A \code{synthetic_data} object (list) with:

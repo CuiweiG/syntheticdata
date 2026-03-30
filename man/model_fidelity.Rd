@@ -15,7 +15,9 @@ model_fidelity(x, outcome, predictors = NULL)
 columns. Default: all other numeric columns.}
 }
 \value{
-A tibble with: train_data, auc (or r2), metric_name.
+A tibble with columns: \code{train_data}, \code{metric}, \code{value}.
+For binary outcomes the metric is AUC; for continuous outcomes
+it is R-squared.
 }
 \description{
 Trains a predictive model on synthetic data and evaluates it

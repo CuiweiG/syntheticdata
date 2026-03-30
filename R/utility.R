@@ -5,12 +5,14 @@
 #' standard). Measures whether synthetic data preserves
 #' predictive signal.
 #'
-#' @param x A \code{synthetic_data} object.
+#' @param x A `synthetic_data` object from [synthesize()].
 #' @param outcome Character. Name of the outcome column.
 #' @param predictors Character vector (optional). Predictor
 #'   columns. Default: all other numeric columns.
 #'
-#' @return A tibble with: train_data, auc (or r2), metric_name.
+#' @return A tibble with columns: `train_data`, `metric`, `value`.
+#'   For binary outcomes the metric is AUC; for continuous outcomes
+#'   it is R-squared.
 #'
 #' @export
 #' @examples
@@ -21,66 +23,56 @@
 #' syn <- synthesize(real, seed = 42)
 #' model_fidelity(syn, outcome = "y")
 model_fidelity <- function(x, outcome, predictors = NULL) {
-    if (!inherits(x, "synthetic_data"))
-        cli::cli_abort("{.arg x} must be a {.cls synthetic_data} object.")
-    if (!outcome %in% names(x$real))
-        cli::cli_abort("'{outcome}' not found in data.")
+  if (!inherits(x, "synthetic_data"))
+    cli::cli_abort("{.arg x} must be a {.cls synthetic_data} object.")
+  if (!outcome %in% names(x$real))
+    cli::cli_abort("Column {.val {outcome}} not found in data.")
 
-    real <- x$real
-    syn <- x$synthetic
+  real <- x$real
+  syn  <- x$synthetic
 
-    if (is.null(predictors)) {
-        num_cols <- vapply(real, is.numeric, logical(1))
-        predictors <- setdiff(names(real)[num_cols], outcome)
+  if (is.null(predictors)) {
+    num_cols <- vapply(real, is.numeric, logical(1))
+    predictors <- setdiff(names(real)[num_cols], outcome)
+  }
+  if (length(predictors) == 0)
+    cli::cli_abort("No predictors available.")
+
+  formula <- as.formula(
+    paste(outcome, "~", paste(predictors, collapse = " + ")))
+
+  is_binary <- all(real[[outcome]] %in% c(0L, 1L, 0, 1))
+
+  .fit_and_eval <- function(train, test, label) {
+    if (is_binary) {
+      fit <- tryCatch(
+        glm(formula, data = train, family = binomial()),
+        error = function(e) NULL)
+      if (is.null(fit)) {
+        return(tibble::tibble(
+          train_data = label, metric = "auc", value = NA_real_))
+      }
+      pred <- predict(fit, newdata = test, type = "response")
+      auc <- .compute_auc(pred, test[[outcome]])
+      tibble::tibble(train_data = label, metric = "auc", value = auc)
+    } else {
+      fit <- tryCatch(
+        lm(formula, data = train),
+        error = function(e) NULL)
+      if (is.null(fit)) {
+        return(tibble::tibble(
+          train_data = label, metric = "r2", value = NA_real_))
+      }
+      pred <- predict(fit, newdata = test)
+      r2 <- cor(pred, test[[outcome]])^2
+      tibble::tibble(train_data = label, metric = "r2", value = r2)
     }
-    if (length(predictors) == 0)
-        cli::cli_abort("No predictors available.")
+  }
 
-    formula <- stats::as.formula(
-        paste(outcome, "~", paste(predictors, collapse = " + ")))
-
-    is_binary <- all(real[[outcome]] %in% c(0L, 1L, 0, 1))
-
-    .fit_and_eval <- function(train, test, label) {
-        if (is_binary) {
-            fit <- tryCatch(
-                stats::glm(formula, data = train,
-                            family = stats::binomial()),
-                error = function(e) NULL)
-            if (is.null(fit)) return(tibble::tibble(
-                train_data = label, metric = "auc", value = NA_real_))
-            pred <- stats::predict(fit, newdata = test,
-                                    type = "response")
-            auc <- .compute_auc_util(pred, test[[outcome]])
-            tibble::tibble(train_data = label,
-                           metric = "auc", value = auc)
-        } else {
-            fit <- tryCatch(
-                stats::lm(formula, data = train),
-                error = function(e) NULL)
-            if (is.null(fit)) return(tibble::tibble(
-                train_data = label, metric = "r2", value = NA_real_))
-            pred <- stats::predict(fit, newdata = test)
-            r2 <- stats::cor(pred, test[[outcome]])^2
-            tibble::tibble(train_data = label,
-                           metric = "r2", value = r2)
-        }
-    }
-
-    cols <- c(outcome, predictors)
-    real_result <- .fit_and_eval(
-        as.data.frame(real[, cols]), as.data.frame(real[, cols]),
-        "real")
-    syn_result <- .fit_and_eval(
-        as.data.frame(syn[, cols]), as.data.frame(real[, cols]),
-        "synthetic")
-    dplyr::bind_rows(real_result, syn_result)
-}
-
-#' @noRd
-.compute_auc_util <- function(pred, lab) {
-    n1 <- sum(lab == 1); n0 <- sum(lab == 0)
-    if (n1 == 0 || n0 == 0) return(NA_real_)
-    r <- rank(pred)
-    (sum(r[lab == 1]) - n1 * (n1 + 1) / 2) / (n1 * n0)
+  cols <- c(outcome, predictors)
+  real_result <- .fit_and_eval(
+    as.data.frame(real[, cols]), as.data.frame(real[, cols]), "real")
+  syn_result <- .fit_and_eval(
+    as.data.frame(syn[, cols]), as.data.frame(real[, cols]), "synthetic")
+  dplyr::bind_rows(real_result, syn_result)
 }

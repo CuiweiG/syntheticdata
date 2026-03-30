@@ -13,7 +13,8 @@ privacy_risk(x, sensitive_cols = NULL)
 considered sensitive for attribute disclosure assessment.}
 }
 \value{
-A tibble with columns: metric, value, risk_level.
+A \code{privacy_assessment} object (tibble) with columns:
+\code{metric}, \code{value}, \code{risk_level}.
 }
 \description{
 Evaluates re-identification risk of synthetic data through
@@ -29,6 +30,6 @@ privacy_risk(syn)
 }
 \references{
 Snoke J, et al. (2018). General and specific utility measures
-for synthetic data. \emph{JRSS-A}, 181(3):663--688.
+for synthetic data. \emph{Journal of the Royal Statistical Society A}, 181(3):663--688.
 \doi{10.1111/rssa.12358}
 }

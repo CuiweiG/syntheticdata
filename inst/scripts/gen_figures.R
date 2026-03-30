@@ -1,4 +1,3 @@
-.libPaths("C:/Users/win10/R/win-library/4.4")
 devtools::load_all(".", quiet = TRUE)
 library(ggplot2)
 library(patchwork)

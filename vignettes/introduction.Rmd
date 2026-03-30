@@ -14,9 +14,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ## Motivation
 
 Sharing individual-level clinical data across institutions is often
-prohibited by GDPR, HIPAA, and institutional review boards. Synthetic
-data preserves the statistical properties of real data while
-eliminating re-identification risk, enabling multi-site collaboration
+restricted by privacy regulations and institutional review boards.
+Synthetic data preserves the statistical properties of real data while
+reducing re-identification risk, enabling multi-site collaboration
 without data transfer.
 
 ## Example: synthesizing patient records

@@ -5,10 +5,10 @@
 #'
 #' @param data A data frame of real data.
 #' @param n Number of synthetic records. Default: same as input.
-#' @param seed Random seed.
+#' @param seed Random seed passed to [synthesize()].
 #'
-#' @return A tibble with columns: method, metric, value,
-#'   interpretation.
+#' @return A `method_comparison` object (tibble) with columns:
+#'   `method`, `metric`, `value`, `interpretation`.
 #'
 #' @references
 #' Jordon J, et al. (2022). Synthetic Data -- what, why and how?
@@ -19,25 +19,23 @@
 #' @examples
 #' set.seed(42)
 #' real <- data.frame(x = rnorm(100), y = rnorm(100))
-#' compare_methods(real)
-compare_methods <- function(data, n = nrow(data), seed = 42) {
-    methods <- c("parametric", "bootstrap", "noise")
-    results <- lapply(methods, function(m) {
-        syn <- synthesize(data, method = m, n = n, seed = seed)
-        val <- validate_synthetic(syn)
-        val$method_used <- m
-        val
-    })
-    out <- dplyr::bind_rows(results)
-    out <- out[, c("method_used", "metric", "value",
-                    "interpretation")]
-    names(out)[1] <- "method"
-    structure(out, class = c("method_comparison",
-                              class(tibble::tibble())))
+#' compare_methods(real, seed = 42)
+compare_methods <- function(data, n = nrow(data), seed = NULL) {
+  methods <- c("parametric", "bootstrap", "noise")
+  results <- lapply(methods, function(m) {
+    syn <- synthesize(data, method = m, n = n, seed = seed)
+    val <- validate_synthetic(syn)
+    val$method_used <- m
+    val
+  })
+  out <- dplyr::bind_rows(results)
+  out <- out[, c("method_used", "metric", "value", "interpretation")]
+  names(out)[1] <- "method"
+  structure(out, class = c("method_comparison", class(tibble::tibble())))
 }
 
 #' @export
 print.method_comparison <- function(x, ...) {
-    cli::cli_h3("Synthesis method comparison")
-    NextMethod()
+  cli::cli_h3("Synthesis method comparison")
+  NextMethod()
 }

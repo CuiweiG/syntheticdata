@@ -14,7 +14,9 @@
 #' @param n Number of synthetic records. Default: same as input.
 #' @param noise_level For `method = "noise"`: scale of Laplace noise
 #'   relative to variable SD. Default 0.1.
-#' @param seed Random seed for reproducibility.
+#' @param seed Random seed for reproducibility. If non-NULL, the
+#'   global RNG state is saved before and restored after synthesis
+#'   so that calling code is not affected.
 #'
 #' @return A `synthetic_data` object (list) with:
 #'   `$synthetic` (tibble), `$method`, `$n_original`, `$n_synthetic`,
@@ -48,7 +50,19 @@ synthesize <- function(data, method = c("parametric", "bootstrap", "noise"),
                        n = nrow(data), noise_level = 0.1, seed = NULL) {
   method <- match.arg(method)
   if (!is.data.frame(data)) cli::cli_abort("{.arg data} must be a data frame.")
-  if (!is.null(seed)) set.seed(seed)
+
+  if (!is.null(seed)) {
+    old_seed <- if (exists(".Random.seed", envir = globalenv()))
+      get(".Random.seed", envir = globalenv()) else NULL
+    on.exit({
+      if (is.null(old_seed)) {
+        rm(".Random.seed", envir = globalenv())
+      } else {
+        assign(".Random.seed", old_seed, envir = globalenv())
+      }
+    }, add = TRUE)
+    set.seed(seed)
+  }
 
   vars <- names(data)
   n_orig <- nrow(data)
@@ -77,33 +91,32 @@ synthesize <- function(data, method = c("parametric", "bootstrap", "noise"),
   # Continuous: Gaussian copula
   if (any(num_cols)) {
     num_data <- as.matrix(data[, num_cols, drop = FALSE])
-    # Rank → normal scores
+    # Rank -> normal scores
     u <- apply(num_data, 2, function(x) {
       r <- rank(x, ties.method = "random") / (length(x) + 1)
-      stats::qnorm(r)
+      qnorm(r)
     })
-    sigma <- stats::cor(u)
-    # Ensure PD
+    sigma <- cor(u)
+    # Ensure positive-definite
     sigma <- tryCatch(chol(sigma), error = function(e) {
       ev <- eigen(sigma, symmetric = TRUE)
       ev$values <- pmax(ev$values, 1e-6)
       chol(ev$vectors %*% diag(ev$values) %*% t(ev$vectors))
     })
-    z <- matrix(stats::rnorm(n * sum(num_cols)), nrow = n) %*% sigma
-    # Back to original marginals
+    z <- matrix(rnorm(n * sum(num_cols)), nrow = n) %*% sigma
+    # Back to original marginals via inverse CDF
     for (j in seq_len(ncol(z))) {
       col_name <- names(which(num_cols))[j]
       orig <- data[[col_name]]
-      u_syn <- stats::pnorm(z[, j])
-      out[[col_name]] <- stats::quantile(orig, probs = u_syn, type = 7,
-                                          names = FALSE)
+      u_syn <- pnorm(z[, j])
+      out[[col_name]] <- quantile(orig, probs = u_syn, type = 7,
+                                   names = FALSE)
     }
   }
 
   # Categorical: multinomial resampling
   cat_cols <- names(data)[!num_cols]
   for (col in cat_cols) {
-    lvls <- unique(data[[col]])
     probs <- table(data[[col]]) / nrow(data)
     out[[col]] <- sample(names(probs), n, replace = TRUE, prob = probs)
   }
@@ -116,9 +129,8 @@ synthesize <- function(data, method = c("parametric", "bootstrap", "noise"),
   idx <- sample(nrow(data), n, replace = TRUE)
   syn <- data[idx, , drop = FALSE]
   rownames(syn) <- NULL
-  # Add small noise to numerics
   for (col in names(data)[num_cols]) {
-    syn[[col]] <- syn[[col]] + stats::rnorm(n, 0, noise_level * stats::sd(data[[col]]))
+    syn[[col]] <- syn[[col]] + rnorm(n, 0, noise_level * sd(data[[col]]))
   }
   syn
 }
@@ -129,10 +141,9 @@ synthesize <- function(data, method = c("parametric", "bootstrap", "noise"),
   syn <- data[idx, , drop = FALSE]
   rownames(syn) <- NULL
   for (col in names(data)[num_cols]) {
-    # Laplace noise
-    scale <- noise_level * stats::sd(data[[col]])
-    u <- stats::runif(n) - 0.5
-    noise <- -scale * sign(u) * log(1 - 2 * abs(u))
+    scale_param <- noise_level * sd(data[[col]])
+    u <- runif(n) - 0.5
+    noise <- -scale_param * sign(u) * log(1 - 2 * abs(u))
     syn[[col]] <- syn[[col]] + noise
   }
   syn
