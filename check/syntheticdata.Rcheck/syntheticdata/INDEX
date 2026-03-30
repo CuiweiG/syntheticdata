@@ -1,5 +1,0 @@
-compare_methods         Compare multiple synthesis methods
-model_fidelity          Downstream model fidelity test
-privacy_risk            Compute privacy risk metrics
-synthesize              Generate synthetic data from a real dataset
-validate_synthetic      Validate synthetic data quality

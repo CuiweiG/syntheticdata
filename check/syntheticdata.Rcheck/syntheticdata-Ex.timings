@@ -1,6 +1,0 @@
-name	user	system	elapsed
-compare_methods	0.42	0.05	0.63	
-model_fidelity	0.03	0.00	0.03	
-privacy_risk	0.01	0.01	0.03	
-synthesize	0.01	0.00	0.01	
-validate_synthetic	0.01	0.02	0.03	
