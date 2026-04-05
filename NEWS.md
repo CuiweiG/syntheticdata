@@ -1,4 +1,4 @@
-# syntheticdata 0.1.0
+# syntheticdata 0.1.1
 
 * Initial release.
 * `synthesize()`: Parametric (Gaussian copula), bootstrap with noise
