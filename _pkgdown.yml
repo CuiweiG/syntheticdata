@@ -1,0 +1,25 @@
+url: https://cuiweig.github.io/syntheticdata/
+template:
+  bootstrap: 5
+
+reference:
+  - title: "Data Synthesis"
+    desc: "Generate synthetic datasets using various methods."
+    contents:
+      - synthesize
+
+  - title: "Validation & Utility"
+    desc: "Validate synthetic data quality and assess statistical utility."
+    contents:
+      - validate_synthetic
+      - model_fidelity
+
+  - title: "Privacy Assessment"
+    desc: "Evaluate re-identification and privacy risks."
+    contents:
+      - privacy_risk
+
+  - title: "Method Comparison"
+    desc: "Compare multiple synthesis approaches."
+    contents:
+      - compare_methods
