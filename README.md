@@ -4,6 +4,8 @@
 
 *Synthetic Clinical Data Generation with Privacy-Utility Validation*
 
+[![CRAN status](https://www.r-pkg.org/badges/version/syntheticdata)](https://CRAN.R-project.org/package=syntheticdata)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/syntheticdata)](https://CRAN.R-project.org/package=syntheticdata)
 [![R-CMD-check](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
