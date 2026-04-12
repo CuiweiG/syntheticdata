@@ -78,11 +78,11 @@ model_fidelity(syn, outcome = "readmission")
 ## Installation
 
 ```r
-# From GitHub:
-devtools::install_github("CuiweiG/syntheticdata")
-
-# After CRAN acceptance:
+# Stable release from CRAN
 install.packages("syntheticdata")
+
+# Development version from GitHub
+# devtools::install_github("CuiweiG/syntheticdata")
 ```
 
 ## Quick start
