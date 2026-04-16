@@ -1,0 +1,31 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "syntheticdata",
+  "name": "syntheticdata",
+  "version": "0.1.1",
+  "description": "Generates synthetic clinical datasets that preserve statistical properties while reducing re-identification risk. Implements Gaussian copula simulation, bootstrap with noise injection, and Laplace noise perturbation, with built-in utility and privacy validation metrics.",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/CuiweiG/syntheticdata",
+  "issueTracker": "https://github.com/CuiweiG/syntheticdata/issues",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R",
+    "url": "https://r-project.org"
+  },
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Cuiwei",
+      "familyName": "Gao",
+      "email": "48gaocuiwei@gmail.com"
+    }
+  ],
+  "keywords": [
+    "synthetic-data",
+    "privacy",
+    "clinical-data",
+    "gaussian-copula"
+  ],
+  "softwareRequirements": "R (>= 4.1.0)"
+}
