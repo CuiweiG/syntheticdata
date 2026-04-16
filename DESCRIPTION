@@ -16,7 +16,8 @@ Description: Generates synthetic clinical datasets that preserve
     (2022) <doi:10.48550/arXiv.2205.03257> and Snoke et al. (2018)
     <doi:10.1111/rssa.12358>.
 License: MIT + file LICENSE
-URL: https://github.com/CuiweiG/syntheticdata
+URL: https://github.com/CuiweiG/syntheticdata,
+    https://cuiweig.github.io/syntheticdata
 BugReports: https://github.com/CuiweiG/syntheticdata/issues
 Depends:
     R (>= 4.1.0)
