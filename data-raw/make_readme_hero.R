@@ -60,29 +60,28 @@ for (m in methods) {
     syn_obj <- synthesize(real, method = m, seed = s)
 
     # Bootstrap / noise synthesisers treat every numeric column as
-    # continuous and so return a noisy real-valued Class column.
-    # Round it back to 0/1 so the downstream binary-outcome glm in
-    # model_fidelity() receives a valid response. This only affects
-    # the outcome column; features are left untouched.
+    # independent continuous variables and so produce noisy Class values;
+    # round to 0/1 (left in place so the saved synthetic_data object is
+    # well-formed, though the downstream Class-prediction AUC is *not*
+    # used below — see correlation_diff reasoning).
     if (m %in% c("bootstrap", "noise")) {
       syn_obj$synthetic$Class <- as.integer(syn_obj$synthetic$Class >= 0.5)
     }
 
-    val     <- validate_synthetic(syn_obj)
-    priv    <- privacy_risk(syn_obj)
-    fid     <- model_fidelity(syn_obj, outcome = "Class")
+    val  <- validate_synthetic(syn_obj)
+    priv <- privacy_risk(syn_obj)
 
-    ks_mean <- val$value[val$metric == "ks_statistic_mean"]
-    nn_rat  <- priv$value[priv$metric == "nn_distance_ratio"]
-    auc_syn  <- fid$value[fid$train_data == "synthetic" & fid$metric == "auc"]
-    auc_real <- fid$value[fid$train_data == "real"      & fid$metric == "auc"]
+    ks_mean       <- val$value[val$metric == "ks_statistic_mean"]
+    nn_rat        <- priv$value[priv$metric == "nn_distance_ratio"]
+    corr_diff     <- val$value[val$metric == "correlation_diff"]
+    discr_auc     <- val$value[val$metric == "discriminative_auc"]
 
     results <- bind_rows(results, tibble(
-      method = m, seed = s,
-      fidelity = 1 - ks_mean,
-      privacy  = nn_rat,
-      auc_syn  = auc_syn,
-      auc_real = auc_real
+      method    = m, seed = s,
+      fidelity  = 1 - ks_mean,
+      privacy   = nn_rat,
+      corr_diff = corr_diff,
+      discr_auc = discr_auc
     ))
 
     # Per-variable KS for Panel C
@@ -110,18 +109,14 @@ cat("\n=== Summary by method (mean across 10 seeds, finite privacy only) ===\n")
 summary_by_method <- results |>
   group_by(method) |>
   summarise(
-    fidelity_mean = mean(fidelity),
-    fidelity_sd   = sd(fidelity),
-    privacy_mean  = mean(privacy),
-    privacy_sd    = sd(privacy),
-    auc_syn_mean  = mean(auc_syn),
-    auc_syn_sd    = sd(auc_syn)
+    fidelity_mean  = mean(fidelity),
+    fidelity_sd    = sd(fidelity),
+    privacy_mean   = mean(privacy),
+    privacy_sd     = sd(privacy),
+    corr_diff_mean = mean(corr_diff),
+    corr_diff_sd   = sd(corr_diff)
   )
 print(summary_by_method)
-
-real_baseline_auc <- mean(results$auc_real)
-cat("\nReal-data baseline AUC (glm, in-sample):",
-    round(real_baseline_auc, 3), "\n")
 
 # ---- Method-label factor for consistent colours ----------------------------
 
@@ -166,6 +161,10 @@ pA <- ggplot(results, aes(x = fidelity, y = privacy,
   annotate("text", x = x_hi - 0.002, y = y_hi - 0.04,
            label = "Higher privacy",
            hjust = 1, size = 3.3, fontface = "italic", colour = "#1B5E20") +
+  annotate("text", x = x_hi - 0.002, y = y_lo + 0.1,
+           label = "NN ratio < 1 may reflect marginal overlap,\nnot only re-identification risk",
+           hjust = 1, size = 2.8, fontface = "italic", colour = "grey35",
+           lineheight = 1.1) +
   stat_ellipse(geom = "polygon", alpha = 0.12, level = 0.95,
                linewidth = 0.4) +
   geom_point(size = 2.2, alpha = 0.75) +
@@ -197,23 +196,36 @@ pA <- ggplot(results, aes(x = fidelity, y = privacy,
 
 # ---- Panel B: downstream AUC -----------------------------------------------
 
-pB <- ggplot(results, aes(x = method_label, y = auc_syn,
+# Panel B now reports pairwise-correlation preservation instead of a
+# downstream-AUC panel. Justification: none of the synthesize() methods
+# preserve the joint distribution of features with the outcome column
+# (bootstrap and noise perturb each column independently; the copula only
+# preserves pairwise correlation by construction). Reporting downstream
+# Class-prediction AUC therefore confounds feature-feature structure with
+# feature-Class structure, and all three methods land near the real-data
+# in-sample AUC on this near-separable dataset. Pairwise correlation
+# preservation (Frobenius norm of the correlation-matrix difference) is
+# a direct utility metric computed by validate_synthetic() and is what
+# downstream users who care about multivariate structure actually need.
+
+pB <- ggplot(results, aes(x = method_label, y = corr_diff,
                           fill = method_label, colour = method_label)) +
-  geom_hline(yintercept = real_baseline_auc,
-             linetype = "dashed", colour = "grey40", linewidth = 0.5) +
-  geom_boxplot(alpha = 0.3, width = 0.55, outlier.shape = NA,
-               linewidth = 0.45) +
-  geom_jitter(width = 0.12, size = 2, alpha = 0.85) +
+  geom_dotplot(binaxis = "y", stackdir = "center",
+               binwidth = NULL, binpositions = "all",
+               dotsize = 0.9, alpha = 0.8,
+               stackratio = 1.1, stroke = 0.3) +
+  stat_summary(fun = median, geom = "crossbar",
+               width = 0.45, linewidth = 0.5,
+               fatten = 2, colour = "grey25") +
   scale_fill_manual(values = method_colours, guide = "none") +
   scale_colour_manual(values = method_colours, guide = "none") +
-  scale_y_continuous(limits = c(0.5, 1),
-                     labels = scales::number_format(accuracy = 0.01)) +
+  scale_y_continuous(limits = c(0, NA),
+                     labels = scales::number_format(accuracy = 0.001)) +
   labs(
-    title    = "Downstream AUC (synthetic -> real)",
-    subtitle = sprintf(
-      "10 seeds; dashed = real-baseline (%.3f)", real_baseline_auc
-    ),
-    x = NULL, y = "AUC"
+    title    = "Pairwise-correlation preservation",
+    subtitle = "Lower = closer to real correlation matrix; crossbar = median",
+    x = NULL,
+    y = "Frobenius norm, |cor(real) - cor(syn)|"
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -225,21 +237,38 @@ pB <- ggplot(results, aes(x = method_label, y = auc_syn,
 
 # ---- Panel C: per-variable KS, median across seeds ------------------------
 
+# Full readable variable labels from the UCI WDBC variable codebook.
+var_label_map <- c(
+  "Cl.thickness"    = "Clump thickness",
+  "Cell.size"       = "Uniformity of cell size",
+  "Cell.shape"      = "Uniformity of cell shape",
+  "Marg.adhesion"   = "Marginal adhesion",
+  "Epith.c.size"    = "Single epithelial cell size",
+  "Bare.nuclei"     = "Bare nuclei",
+  "Bl.cromatin"     = "Bland chromatin",
+  "Normal.nucleoli" = "Normal nucleoli",
+  "Mitoses"         = "Mitoses"
+)
+per_var_ks$variable_full <- var_label_map[per_var_ks$variable]
+
 var_summary <- per_var_ks |>
-  group_by(method_label, variable) |>
+  group_by(method_label, variable_full) |>
   summarise(
     median_ks = median(ks),
     iqr_lo    = quantile(ks, 0.25),
     iqr_hi    = quantile(ks, 0.75),
     .groups   = "drop"
   ) |>
-  mutate(variable = factor(
-    variable,
-    levels = per_var_ks |> group_by(variable) |>
-      summarise(m = median(ks)) |> arrange(m) |> pull(variable)
+  mutate(variable_full = factor(
+    variable_full,
+    levels = per_var_ks |>
+      group_by(variable_full) |>
+      summarise(m = median(ks)) |>
+      arrange(m) |>
+      pull(variable_full)
   ))
 
-pC <- ggplot(var_summary, aes(x = variable, y = median_ks,
+pC <- ggplot(var_summary, aes(x = variable_full, y = median_ks,
                               fill = method_label)) +
   geom_col(position = position_dodge(width = 0.75), width = 0.65,
            colour = "grey25", linewidth = 0.2) +
@@ -273,16 +302,21 @@ combined <- pA + (pB / pC) +
   plot_annotation(
     title = "Three-way comparison: parametric vs bootstrap vs noise synthesis",
     subtitle = sprintf(
-      "UCI Wisconsin Breast Cancer (N = %d, %d features); 10 seeds per method",
+      paste0("UCI Wisconsin Breast Cancer (N = %d, %d numeric features).  ",
+             "Ten seeds per method with fixed RNGkind.  ",
+             "95%% ellipses at probability 0.95."),
       N, P
     ),
     caption = paste0(
       "Data: UCI Wisconsin Breast Cancer Diagnostic (Wolberg & Mangasarian ",
       "1990), via mlbench::BreastCancer.  Complete cases only.\n",
-      "NN distance ratio per Domingo-Ferrer & Torra (2003); ratio > 1 ",
-      "indicates higher privacy. ",
-      "Methods: syntheticdata::synthesize(), validate_synthetic(), ",
-      "privacy_risk(), model_fidelity()."
+      "NN distance ratio = median d(syn->real) / median d(real->real'); ",
+      "ratio > 1 commonly read as higher privacy but needs ",
+      "privacy_risk() full output for context.\n",
+      "Downstream Class-prediction AUC omitted: current synthesize() methods ",
+      "are feature-only; bootstrap/noise lose feature-Class joint ",
+      "structure, making that AUC uninformative.\n",
+      "Methods: syntheticdata::synthesize(), validate_synthetic(), privacy_risk()."
     ),
     theme = theme(
       plot.title            = element_text(face = "bold", size = 15),
