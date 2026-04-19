@@ -10,11 +10,16 @@ downloads](https://cranlogs.r-pkg.org/badges/grand-total/syntheticdata)](https:/
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-![Scatter plot of privacy (nearest-neighbor distance ratio) versus
-distributional fidelity across three synthesis methods: Gaussian copula
-sits near the privacy floor with high fidelity, while Bootstrap and
-Laplace noise fall substantially below the privacy
-floor.](reference/figures/privacy_utility_hero.png)
+![Three-panel comparison of parametric (Gaussian copula), bootstrap, and
+Laplace-noise synthesis on the UCI Wisconsin Breast Cancer dataset
+(N=683, 9 features), ten seeds per method. Left panel: privacy-utility
+plane showing Gaussian copula with the highest fidelity (~98%) and
+privacy (NN distance ratio ~3), while bootstrap and Laplace noise
+cluster below the privacy floor at low fidelity (~75%). Top right:
+downstream classifier AUC (synthetic to real) remains near 0.99 for all
+methods, close to the real-baseline 0.996. Bottom right: per-variable KS
+breakdown showing Gaussian copula dominates on marginal preservation
+across all nine features.](reference/figures/privacy_utility_hero.png)
 
 ------------------------------------------------------------------------
 
