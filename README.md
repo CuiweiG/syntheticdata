@@ -11,6 +11,10 @@
 
 </div>
 
+<p align="center">
+<img src="man/figures/privacy_utility_hero.png" width="70%" alt="Scatter plot of privacy (nearest-neighbor distance ratio) versus distributional fidelity across three synthesis methods: Gaussian copula sits near the privacy floor with high fidelity, while Bootstrap and Laplace noise fall substantially below the privacy floor." />
+</p>
+
 ---
 
 ## Overview
