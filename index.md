@@ -10,6 +10,12 @@ downloads](https://cranlogs.r-pkg.org/badges/grand-total/syntheticdata)](https:/
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+![Scatter plot of privacy (nearest-neighbor distance ratio) versus
+distributional fidelity across three synthesis methods: Gaussian copula
+sits near the privacy floor with high fidelity, while Bootstrap and
+Laplace noise fall substantially below the privacy
+floor.](reference/figures/privacy_utility_hero.png)
+
 ------------------------------------------------------------------------
 
 ## Overview
