@@ -1,16 +1,10 @@
-# Build syntheticdata README hero on real UCI Wisconsin Breast Cancer data.
+# Publication-standard hero figure for syntheticdata on UCI WDBC.
 #
-# Data: mlbench::BreastCancer (UCI WDBC; Wolberg & Mangasarian 1990,
-#   Wisconsin; public domain).
-# Variability: 10 seeds x 3 synthesis methods = 30 runs.
-# Downstream task: binary classification of benign/malignant via glm AUC.
-# Privacy metric: nearest-neighbour distance ratio
-#   (ratio = median(d_syn->real) / median(d_real->real'); formula in
-#   syntheticdata::privacy_risk source; ratio > 1 => higher privacy
-#   because synthetic records are FARTHER from real records than real
-#   records are from their nearest other real record).
-#
-# Output: man/figures/privacy_utility_hero.png (1400x900 @ 150 dpi).
+# Data: mlbench::BreastCancer (Wolberg & Mangasarian 1990), 683 cases, 9
+#   numeric features.
+# Variability: ten seeds per method with fixed RNGkind.
+# Output: man/figures/privacy_utility_hero.{png,pdf} @ 600 DPI, 183x120 mm.
+# Layout: 3-panel patchwork (top row a|b, bottom row c).
 
 suppressPackageStartupMessages({
   library(syntheticdata)
@@ -20,37 +14,74 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(mlbench)
+  library(ragg)
+  library(systemfonts)
 })
 
-# ---- Load & clean data -----------------------------------------------------
+# ---- Theme ----------------------------------------------------------------
+
+theme_publication <- function(base_size = 8) {
+  theme_classic(base_size = base_size, base_family = "sans") +
+    theme(
+      plot.title            = element_text(face = "bold", size = rel(1.10),
+                                           hjust = 0,
+                                           margin = margin(b = 3)),
+      plot.subtitle         = element_text(size = rel(0.95),
+                                           color = "grey30",
+                                           margin = margin(b = 5)),
+      plot.caption          = element_text(size = rel(0.85),
+                                           color = "grey40",
+                                           hjust = 0,
+                                           margin = margin(t = 5),
+                                           lineheight = 1.15),
+      plot.caption.position = "plot",
+      plot.title.position   = "plot",
+      axis.title            = element_text(size = rel(1.00), color = "black"),
+      axis.text             = element_text(size = rel(0.90), color = "black"),
+      axis.line             = element_line(linewidth = 0.35, color = "black"),
+      axis.ticks            = element_line(linewidth = 0.35, color = "black"),
+      panel.grid.major      = element_line(linewidth = 0.25, color = "grey88"),
+      panel.grid.minor      = element_blank(),
+      legend.title          = element_text(size = rel(1.00), face = "bold"),
+      legend.text           = element_text(size = rel(0.90)),
+      legend.key.size       = unit(3, "mm"),
+      legend.margin         = margin(0, 0, 0, 0),
+      legend.background     = element_blank(),
+      plot.margin           = margin(4, 6, 4, 6),
+      plot.tag              = element_text(face = "bold",
+                                           size = rel(1.40),
+                                           family = "sans")
+    )
+}
+
+method_colours <- c(
+  "Gaussian copula" = "#0072B2",
+  "Bootstrap"       = "#D55E00",
+  "Laplace noise"   = "#CC79A7"
+)
+
+# ---- Load + clean UCI WDBC ------------------------------------------------
 
 data(BreastCancer, package = "mlbench")
-cat("Raw BreastCancer: ", nrow(BreastCancer), " rows x ",
-    ncol(BreastCancer), " cols\n", sep = "")
-
 real <- BreastCancer |>
   select(-Id) |>
   filter(complete.cases(across(everything())))
 
-# BreastCancer stores feature values as ordered factors "1".."10"; cast to
-# numeric so downstream synthesis and KS tests behave sensibly.
 feat_cols <- setdiff(names(real), "Class")
 real[feat_cols] <- lapply(real[feat_cols],
                           function(x) as.numeric(as.character(x)))
-
-# Binary outcome (0/1). Keep the Class column so model_fidelity() can use it.
 real$Class <- as.integer(real$Class == "malignant")
 
-N <- nrow(real)
-P <- length(feat_cols)
-prev <- round(mean(real$Class), 3)
-cat("Cleaned: N=", N, " features=", P, " malignant prevalence=", prev, "\n",
-    sep = "")
+N <- nrow(real); P <- length(feat_cols)
+cat("UCI BreastCancer cleaned: N=", N, " P=", P, "\n", sep = "")
 
-# ---- Multi-seed comparison -------------------------------------------------
+# ---- Multi-seed comparison with strict per-iteration seeds ---------------
 
 seeds   <- c(42, 1, 7, 17, 99, 123, 555, 2024, 314, 271)
 methods <- c("parametric", "bootstrap", "noise")
+
+RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion",
+        sample.kind = "Rejection")
 
 results    <- tibble()
 per_var_ks <- tibble()
@@ -58,33 +89,23 @@ per_var_ks <- tibble()
 for (m in methods) {
   for (s in seeds) {
     syn_obj <- synthesize(real, method = m, seed = s)
-
-    # Bootstrap / noise synthesisers treat every numeric column as
-    # independent continuous variables and so produce noisy Class values;
-    # round to 0/1 (left in place so the saved synthetic_data object is
-    # well-formed, though the downstream Class-prediction AUC is *not*
-    # used below — see correlation_diff reasoning).
     if (m %in% c("bootstrap", "noise")) {
       syn_obj$synthetic$Class <- as.integer(syn_obj$synthetic$Class >= 0.5)
     }
 
+    iter_seed <- 10000L * match(m, methods) + s
+    set.seed(iter_seed)
+
     val  <- validate_synthetic(syn_obj)
     priv <- privacy_risk(syn_obj)
 
-    ks_mean       <- val$value[val$metric == "ks_statistic_mean"]
-    nn_rat        <- priv$value[priv$metric == "nn_distance_ratio"]
-    corr_diff     <- val$value[val$metric == "correlation_diff"]
-    discr_auc     <- val$value[val$metric == "discriminative_auc"]
-
     results <- bind_rows(results, tibble(
       method    = m, seed = s,
-      fidelity  = 1 - ks_mean,
-      privacy   = nn_rat,
-      corr_diff = corr_diff,
-      discr_auc = discr_auc
+      fidelity  = 1 - val$value[val$metric == "ks_statistic_mean"],
+      privacy   = priv$value[priv$metric == "nn_distance_ratio"],
+      corr_diff = val$value[val$metric == "correlation_diff"]
     ))
 
-    # Per-variable KS for Panel C
     for (v in feat_cols) {
       k <- suppressWarnings(
         ks.test(syn_obj$real[[v]], syn_obj$synthetic[[v]])$statistic
@@ -94,150 +115,97 @@ for (m in methods) {
       ))
     }
   }
-  cat("Method", m, "done\n")
 }
 
-# ---- Sanitise: replace infinite privacy ratios (caused by duplicate
-# ---- real rows making median(d_rr) = 0) with a capped numerical value
-# ---- for plotting. These cases remain reported in the caption.
-
+# Cap infinite privacy ratios for plotting (documented in caption).
 n_inf <- sum(!is.finite(results$privacy))
-cat("\nInfinite / NA privacy ratios:", n_inf, "(will be capped at 6)\n")
 results$privacy[!is.finite(results$privacy)] <- 6
 
-cat("\n=== Summary by method (mean across 10 seeds, finite privacy only) ===\n")
-summary_by_method <- results |>
-  group_by(method) |>
-  summarise(
-    fidelity_mean  = mean(fidelity),
-    fidelity_sd    = sd(fidelity),
-    privacy_mean   = mean(privacy),
-    privacy_sd     = sd(privacy),
-    corr_diff_mean = mean(corr_diff),
-    corr_diff_sd   = sd(corr_diff)
-  )
-print(summary_by_method)
+# Method factor for ordering + colour.
+method_map <- c(parametric = "Gaussian copula",
+                bootstrap  = "Bootstrap",
+                noise      = "Laplace noise")
+results$method_label    <- factor(method_map[results$method],
+                                  levels = unname(method_map))
+per_var_ks$method_label <- factor(method_map[per_var_ks$method],
+                                  levels = unname(method_map))
 
-# ---- Method-label factor for consistent colours ----------------------------
+cat("\nSummary by method:\n")
+print(results |> group_by(method_label) |>
+        summarise(fidelity  = mean(fidelity),
+                  privacy   = mean(privacy),
+                  corr_diff = mean(corr_diff),
+                  .groups   = "drop"))
+cat("Infinite privacy ratios (capped at 6):", n_inf, "\n")
 
-method_labels <- c(
-  parametric = "Gaussian copula",
-  bootstrap  = "Bootstrap",
-  noise      = "Laplace noise"
-)
-results$method_label    <- factor(method_labels[results$method],
-                                   levels = unname(method_labels))
-per_var_ks$method_label <- factor(method_labels[per_var_ks$method],
-                                   levels = unname(method_labels))
+# ---- Panel a: privacy-utility plane --------------------------------------
 
-method_colours <- c(
-  "Gaussian copula" = "#1565C0",
-  "Bootstrap"       = "#E65100",
-  "Laplace noise"   = "#6A1B9A"
-)
-
-# ---- Panel A: privacy-utility 2D plane ------------------------------------
-
-centroids <- results |>
-  group_by(method_label) |>
+centroids <- results |> group_by(method_label) |>
   summarise(fidelity = mean(fidelity),
             privacy  = mean(privacy),
             .groups  = "drop")
 
-x_lo <- min(results$fidelity, na.rm = TRUE) - 0.02
-x_hi <- max(results$fidelity, na.rm = TRUE) + 0.02
-y_lo <- min(results$privacy,  na.rm = TRUE) - 0.15
-y_hi <- max(results$privacy,  na.rm = TRUE) + 0.25
+x_lo <- min(results$fidelity) - 0.015
+x_hi <- 1.005
+y_lo <- 0
+y_hi <- 6.5
 
 pA <- ggplot(results, aes(x = fidelity, y = privacy,
                           colour = method_label, fill = method_label)) +
   annotate("rect", xmin = -Inf, xmax = Inf, ymin = 1, ymax = Inf,
-           fill = "#1B5E20", alpha = 0.06) +
+           fill = "#009E73", alpha = 0.03) +
   geom_hline(yintercept = 1, linetype = "dashed",
-             colour = "grey45", linewidth = 0.45) +
-  annotate("text", x = x_lo + 0.002, y = 1,
-           label = "Privacy floor (ratio = 1)",
-           hjust = 0, vjust = -0.5, size = 3.3, colour = "grey30") +
-  annotate("text", x = x_hi - 0.002, y = y_hi - 0.04,
-           label = "Higher privacy",
-           hjust = 1, size = 3.3, fontface = "italic", colour = "#1B5E20") +
-  annotate("text", x = x_hi - 0.002, y = y_lo + 0.1,
-           label = "NN ratio < 1 may reflect marginal overlap,\nnot only re-identification risk",
-           hjust = 1, size = 2.8, fontface = "italic", colour = "grey35",
-           lineheight = 1.1) +
-  stat_ellipse(geom = "polygon", alpha = 0.12, level = 0.95,
-               linewidth = 0.4) +
-  geom_point(size = 2.2, alpha = 0.75) +
-  geom_point(data = centroids, aes(x = fidelity, y = privacy,
-                                    colour = method_label),
-             size = 4.5, shape = 18, show.legend = FALSE) +
+             colour = "grey45", linewidth = 0.40) +
+  stat_ellipse(geom = "polygon", alpha = 0.10, level = 0.95,
+               linewidth = 0.35) +
+  geom_point(size = 1.4, alpha = 0.85) +
+  geom_point(data = centroids, shape = 18,
+             size = 3.2, show.legend = FALSE) +
   geom_text_repel(data = centroids,
                   aes(label = method_label, colour = method_label),
-                  fontface = "bold", size = 4.1,
-                  seed = 1, box.padding = 0.8, point.padding = 0.5,
+                  fontface = "bold", size = 2.7, seed = 1,
+                  box.padding = 0.7, point.padding = 0.5,
                   min.segment.length = 0, show.legend = FALSE) +
-  scale_colour_manual(values = method_colours, name = NULL, guide = "none") +
-  scale_fill_manual(values = method_colours, name = NULL, guide = "none") +
+  annotate("text", x = x_lo + 0.003, y = 1,
+           label = "Parity", hjust = 0, vjust = -0.4,
+           size = 2.3, colour = "grey30") +
+  annotate("text", x = x_hi - 0.002, y = 0.1,
+           label = paste0("NN ratio < 1: marginal overlap;",
+                          "\nsee privacy_risk() full output"),
+           hjust = 1, vjust = 0, size = 1.9, colour = "grey40",
+           fontface = "italic", lineheight = 1.1) +
+  scale_colour_manual(values = method_colours, guide = "none") +
+  scale_fill_manual(values = method_colours, guide = "none") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1),
                      limits = c(x_lo, x_hi)) +
-  scale_y_continuous(limits = c(y_lo, y_hi)) +
-  labs(
-    title    = "Privacy-utility plane",
-    subtitle = "Each point = 1 seed (10 per method); ellipses are 95% CI",
-    x = "Distributional fidelity (1 - mean KS)",
-    y = "Privacy (NN distance ratio)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    plot.title       = element_text(face = "bold", size = 13),
-    plot.subtitle    = element_text(colour = "grey30", size = 10)
-  )
+  coord_cartesian(ylim = c(y_lo, y_hi)) +
+  labs(title = "Privacy-utility trade-off",
+       x = "Distributional fidelity (1 - mean KS statistic)",
+       y = "NN distance ratio") +
+  theme_publication()
 
-# ---- Panel B: downstream AUC -----------------------------------------------
-
-# Panel B now reports pairwise-correlation preservation instead of a
-# downstream-AUC panel. Justification: none of the synthesize() methods
-# preserve the joint distribution of features with the outcome column
-# (bootstrap and noise perturb each column independently; the copula only
-# preserves pairwise correlation by construction). Reporting downstream
-# Class-prediction AUC therefore confounds feature-feature structure with
-# feature-Class structure, and all three methods land near the real-data
-# in-sample AUC on this near-separable dataset. Pairwise correlation
-# preservation (Frobenius norm of the correlation-matrix difference) is
-# a direct utility metric computed by validate_synthetic() and is what
-# downstream users who care about multivariate structure actually need.
+# ---- Panel b: correlation preservation -----------------------------------
 
 pB <- ggplot(results, aes(x = method_label, y = corr_diff,
                           fill = method_label, colour = method_label)) +
   geom_dotplot(binaxis = "y", stackdir = "center",
-               binwidth = NULL, binpositions = "all",
-               dotsize = 0.9, alpha = 0.8,
-               stackratio = 1.1, stroke = 0.3) +
+               binwidth = 0.0006, dotsize = 1.1,
+               alpha = 0.80, stroke = 0.25) +
   stat_summary(fun = median, geom = "crossbar",
-               width = 0.45, linewidth = 0.5,
-               fatten = 2, colour = "grey25") +
+               width = 0.50, linewidth = 0.50, fatten = 1,
+               colour = "grey15") +
   scale_fill_manual(values = method_colours, guide = "none") +
   scale_colour_manual(values = method_colours, guide = "none") +
   scale_y_continuous(limits = c(0, NA),
-                     labels = scales::number_format(accuracy = 0.001)) +
-  labs(
-    title    = "Pairwise-correlation preservation",
-    subtitle = "Lower = closer to real correlation matrix; crossbar = median",
-    x = NULL,
-    y = "Frobenius norm, |cor(real) - cor(syn)|"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    plot.title       = element_text(face = "bold", size = 13),
-    plot.subtitle    = element_text(colour = "grey30", size = 10),
-    axis.text.x      = element_text(face = "bold", size = 10)
-  )
+                     labels = scales::number_format(accuracy = 0.005)) +
+  labs(title = "Multivariate fidelity",
+       x = NULL,
+       y = "Frobenius ||cor(real) - cor(syn)||") +
+  theme_publication() +
+  theme(axis.text.x = element_text(face = "bold", size = rel(0.85)))
 
-# ---- Panel C: per-variable KS, median across seeds ------------------------
+# ---- Panel c: per-variable KS --------------------------------------------
 
-# Full readable variable labels from the UCI WDBC variable codebook.
 var_label_map <- c(
   "Cl.thickness"    = "Clump thickness",
   "Cell.size"       = "Uniformity of cell size",
@@ -253,89 +221,89 @@ per_var_ks$variable_full <- var_label_map[per_var_ks$variable]
 
 var_summary <- per_var_ks |>
   group_by(method_label, variable_full) |>
-  summarise(
-    median_ks = median(ks),
-    iqr_lo    = quantile(ks, 0.25),
-    iqr_hi    = quantile(ks, 0.75),
-    .groups   = "drop"
-  ) |>
+  summarise(median_ks = median(ks),
+            iqr_lo    = quantile(ks, 0.25),
+            iqr_hi    = quantile(ks, 0.75),
+            .groups   = "drop") |>
   mutate(variable_full = factor(
     variable_full,
-    levels = per_var_ks |>
-      group_by(variable_full) |>
-      summarise(m = median(ks)) |>
-      arrange(m) |>
-      pull(variable_full)
+    levels = per_var_ks |> group_by(variable_full) |>
+      summarise(m = max(ks)) |> arrange(m) |> pull(variable_full)
   ))
 
-pC <- ggplot(var_summary, aes(x = variable_full, y = median_ks,
+pC <- ggplot(var_summary, aes(y = variable_full, x = median_ks,
                               fill = method_label)) +
-  geom_col(position = position_dodge(width = 0.75), width = 0.65,
-           colour = "grey25", linewidth = 0.2) +
-  geom_errorbar(aes(ymin = iqr_lo, ymax = iqr_hi),
-                position = position_dodge(width = 0.75),
-                width = 0.2, colour = "grey15", linewidth = 0.35) +
+  geom_col(position = position_dodge(width = 0.80),
+           width = 0.72, colour = "black", linewidth = 0.25) +
+  geom_errorbarh(aes(xmin = iqr_lo, xmax = iqr_hi),
+                 position = position_dodge(width = 0.80),
+                 height = 0.25, colour = "grey15", linewidth = 0.35) +
   scale_fill_manual(values = method_colours, name = NULL) +
-  scale_y_continuous(limits = c(0, NA),
+  scale_x_continuous(limits = c(0, NA),
+                     breaks = seq(0, 1, 0.1),
                      labels = scales::number_format(accuracy = 0.01)) +
-  coord_flip() +
-  labs(
-    title    = "Per-variable KS (median across seeds)",
-    subtitle = "Lower = marginal better preserved; bars = IQR",
-    x = NULL, y = "KS statistic"
-  ) +
-  theme_minimal(base_size = 12) +
+  labs(title = "Per-feature distributional similarity",
+       x = "Kolmogorov-Smirnov statistic",
+       y = NULL) +
+  theme_publication() +
   theme(
-    panel.grid.minor = element_blank(),
-    plot.title       = element_text(face = "bold", size = 13),
-    plot.subtitle    = element_text(colour = "grey30", size = 10),
-    axis.text.y      = element_text(size = 8.5),
-    legend.position  = "bottom",
-    legend.key.size  = unit(0.4, "cm"),
-    legend.text      = element_text(size = 9)
+    legend.position      = "bottom",
+    legend.direction     = "horizontal",
+    legend.key.size      = unit(2.6, "mm"),
+    legend.margin        = margin(t = 0, b = 0)
   )
 
-# ---- Compose: A (left, full height) + B / C stacked (right) ----------------
+# ---- Compose --------------------------------------------------------------
 
-combined <- pA + (pB / pC) +
-  plot_layout(widths = c(0.5, 0.5)) +
+combined <- ((pA + pB) / pC) +
+  plot_layout(heights = c(3, 2)) +
   plot_annotation(
-    title = "Three-way comparison: parametric vs bootstrap vs noise synthesis",
+    title    = "Privacy-utility evaluation of synthetic data generation",
     subtitle = sprintf(
-      paste0("UCI Wisconsin Breast Cancer (N = %d, %d numeric features).  ",
-             "Ten seeds per method with fixed RNGkind.  ",
-             "95%% ellipses at probability 0.95."),
+      "UCI Wisconsin Breast Cancer (N = %d, %d features); 10 seeds per method.",
       N, P
     ),
-    caption = paste0(
-      "Data: UCI Wisconsin Breast Cancer Diagnostic (Wolberg & Mangasarian ",
-      "1990), via mlbench::BreastCancer.  Complete cases only.\n",
+    caption  = paste0(
+      "Panel a: one point per seed; 95% confidence ellipses.\n",
       "NN distance ratio = median d(syn->real) / median d(real->real'); ",
-      "ratio > 1 commonly read as higher privacy but needs ",
-      "privacy_risk() full output for context.\n",
-      "Downstream Class-prediction AUC omitted: current synthesize() methods ",
-      "are feature-only; bootstrap/noise lose feature-Class joint ",
-      "structure, making that AUC uninformative.\n",
-      "Methods: syntheticdata::synthesize(), validate_synthetic(), privacy_risk()."
+      "values > 1 indicate synthetic farther from real than real-from-real.\n",
+      "Panel b: Frobenius norm of real-vs-synthetic correlation matrix; ",
+      "lower = better multivariate preservation.\n",
+      "Panel c: KS per feature, median and IQR across 10 seeds.\n",
+      "Data: mlbench::BreastCancer (Wolberg & Mangasarian 1990). ",
+      "NN ratio: Domingo-Ferrer & Torra (2003)."
     ),
-    theme = theme(
-      plot.title            = element_text(face = "bold", size = 15),
-      plot.subtitle         = element_text(colour = "grey30", size = 12),
-      plot.caption          = element_text(colour = "grey35", size = 8.5,
-                                           hjust = 0, lineheight = 1.3,
-                                           margin = margin(t = 10)),
-      plot.caption.position = "plot",
-      plot.margin           = margin(10, 18, 10, 10)
-    )
+    tag_levels = "a"
+  ) &
+  theme(
+    plot.tag     = element_text(face = "bold", size = 11, family = "sans"),
+    plot.caption = element_text(hjust = 0, color = "grey40",
+                                size = rel(0.85), lineheight = 1.15,
+                                margin = margin(t = 5)),
+    plot.caption.position = "plot"
   )
 
 # ---- Save ------------------------------------------------------------------
 
 dir.create("man/figures", showWarnings = FALSE, recursive = TRUE)
-out <- "man/figures/privacy_utility_hero.png"
-ggsave(out, combined,
-       width = 1400, height = 900, units = "px",
-       dpi = 150, bg = "white")
-sz <- file.info(out)$size
-cat("\nSaved:", out, "-", sz, "bytes\n")
-stopifnot(sz > 50000)
+
+ggsave(
+  filename = "man/figures/privacy_utility_hero.png",
+  plot     = combined,
+  device   = ragg::agg_png,
+  width    = 183, height = 120, units = "mm",
+  res      = 600, scaling = 1, bg = "white"
+)
+cat("\nPNG saved:", file.info("man/figures/privacy_utility_hero.png")$size,
+    "bytes\n")
+
+ggsave(
+  filename = "man/figures/privacy_utility_hero.pdf",
+  plot     = combined,
+  device   = cairo_pdf,
+  width    = 183, height = 120, units = "mm"
+)
+cat("PDF saved:", file.info("man/figures/privacy_utility_hero.pdf")$size,
+    "bytes\n")
+
+stopifnot(file.info("man/figures/privacy_utility_hero.png")$size > 100000)
