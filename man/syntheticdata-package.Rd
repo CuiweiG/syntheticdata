@@ -5,11 +5,11 @@
 \alias{syntheticdata}
 \alias{syntheticdata-package}
 \title{syntheticdata: Synthetic Clinical Data Generation and
-  Privacy-Preserving Validation}
+Privacy-Preserving Validation}
 \description{
 Generates synthetic clinical datasets that preserve statistical
 properties while reducing re-identification risk. Implements
-Gaussian copula resampling, bootstrap with noise injection, and
+Gaussian copula simulation, bootstrap with noise injection, and
 Laplace noise perturbation, with built-in utility and privacy
 validation metrics.
 }
@@ -17,12 +17,13 @@ validation metrics.
 Useful links:
 \itemize{
   \item \url{https://github.com/CuiweiG/syntheticdata}
+  \item \url{https://cuiweig.github.io/syntheticdata/}
   \item Report bugs at \url{https://github.com/CuiweiG/syntheticdata/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Cuiwei Gao \email{48gaocuiwei@gmail.com} [copyright holder]
+\strong{Maintainer}: Cuiwei Gao \email{48gaocuiwei@gmail.com} (\href{https://orcid.org/0009-0002-4896-0601}{ORCID}) [copyright holder]
 
 }
 \keyword{internal}

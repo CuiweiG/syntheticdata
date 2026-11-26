@@ -2,8 +2,9 @@ Package: syntheticdata
 Title: Synthetic Clinical Data Generation and Privacy-Preserving Validation
 Version: 0.1.1
 Authors@R:
-    person("Cuiwei", "Gao", , "48gaocuiwei@gmail.com",
-    role = c("aut", "cre", "cph"))
+    person("Cuiwei", "Gao", email = "48gaocuiwei@gmail.com",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0009-0002-4896-0601"))
 Description: Generates synthetic clinical datasets that preserve
     statistical properties while reducing re-identification risk.
     Implements Gaussian copula simulation, bootstrap with noise
@@ -17,7 +18,7 @@ Description: Generates synthetic clinical datasets that preserve
     <doi:10.1111/rssa.12358>.
 License: MIT + file LICENSE
 URL: https://github.com/CuiweiG/syntheticdata,
-    https://cuiweig.github.io/syntheticdata
+    https://cuiweig.github.io/syntheticdata/
 BugReports: https://github.com/CuiweiG/syntheticdata/issues
 Depends:
     R (>= 4.1.0)
