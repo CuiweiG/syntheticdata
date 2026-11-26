@@ -47,6 +47,7 @@ All new functionality should be accompanied by
 [testthat](https://testthat.r-lib.org/) tests. Run the test suite with:
 
 ``` r
+
 devtools::test()
 ```
 

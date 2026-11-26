@@ -11,10 +11,12 @@ without data transfer.
 ## Example: synthesizing patient records
 
 ``` r
+
 library(syntheticdata)
 ```
 
 ``` r
+
 set.seed(42)
 real <- data.frame(
   age     = rnorm(500, mean = 65, sd = 12),
@@ -41,6 +43,7 @@ captures the joint dependence structure via a Gaussian copula on normal
 scores. This preserves both marginal shapes and pairwise correlations.
 
 ``` r
+
 syn <- synthesize(real, method = "parametric", n = 500, seed = 1)
 syn
 #> 
@@ -55,6 +58,7 @@ syn
 computes four classes of metrics:
 
 ``` r
+
 val <- validate_synthetic(syn)
 val
 #> 
@@ -79,6 +83,7 @@ runs all three synthesis methods on the same data and returns a single
 comparison table:
 
 ``` r
+
 comp <- compare_methods(real, seed = 1)
 comp
 #> 
@@ -108,6 +113,7 @@ distance ratio, membership inference accuracy, and (optionally)
 attribute disclosure risk for sensitive columns.
 
 ``` r
+
 pr <- privacy_risk(syn, sensitive_cols = "age")
 pr
 #> 
@@ -125,6 +131,7 @@ data. The real-data baseline uses in-sample evaluation as an upper
 bound.
 
 ``` r
+
 mf <- model_fidelity(syn, outcome = "outcome")
 mf
 #> # A tibble: 2 × 3
@@ -142,6 +149,7 @@ indicates that the synthetic data preserves the predictive signal.
 Higher `noise_level` improves privacy but reduces utility:
 
 ``` r
+
 results <- list()
 for (nl in c(0.05, 0.1, 0.2, 0.5)) {
   s <- synthesize(real, method = "noise", noise_level = nl, seed = 1)

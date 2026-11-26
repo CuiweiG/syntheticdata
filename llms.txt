@@ -5,8 +5,11 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/syntheticdata)](https://CRAN.R-project.org/package=syntheticdata)
 [![CRAN
+checks](https://badges.cranchecks.info/worst/syntheticdata.svg)](https://cran.r-project.org/web/checks/check_results_syntheticdata.html)
+[![CRAN
 downloads](https://cranlogs.r-pkg.org/badges/grand-total/syntheticdata)](https://CRAN.R-project.org/package=syntheticdata)
 [![R-CMD-check](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/CuiweiG/syntheticdata/actions/workflows/R-CMD-check.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.syntheticdata-blue.svg)](https://doi.org/10.32614/CRAN.package.syntheticdata)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -66,11 +69,11 @@ validation](reference/figures/fig1_synthetic_validation.png)
 
 ## Why syntheticdata?
 
-| Package    | Focus                           | syntheticdata difference                                                                  |
-|------------|---------------------------------|-------------------------------------------------------------------------------------------|
+| Package | Focus | syntheticdata difference |
+|----|----|----|
 | `synthpop` | Survey/census data (CART-based) | syntheticdata targets clinical data with Gaussian copula preserving correlation structure |
-| `simPop`   | Population microsimulation      | syntheticdata integrates privacy metrics (NN ratio, membership inference)                 |
-| `simstudy` | Simulation for trials           | syntheticdata generates from real data, not from specified distributions                  |
+| `simPop` | Population microsimulation | syntheticdata integrates privacy metrics (NN ratio, membership inference) |
+| `simstudy` | Simulation for trials | syntheticdata generates from real data, not from specified distributions |
 
 The gap: **no CRAN package combines generation + privacy assessment +
 downstream model fidelity testing in one workflow.** Existing tools
@@ -78,6 +81,7 @@ either generate without validating, or validate without privacy-aware
 metrics.
 
 ``` r
+
 # Complete workflow in 3 lines
 syn <- synthesize(clinical_data, method = "parametric")
 privacy_risk(syn, sensitive_cols = c("diagnosis", "age"))
@@ -89,6 +93,7 @@ model_fidelity(syn, outcome = "readmission")
 ## Installation
 
 ``` r
+
 # Stable release from CRAN
 install.packages("syntheticdata")
 
@@ -99,6 +104,7 @@ install.packages("syntheticdata")
 ## Quick start
 
 ``` r
+
 library(syntheticdata)
 
 # Synthesize from real clinical data
@@ -111,13 +117,13 @@ validate_synthetic(syn)
 
 ## Functions
 
-| Function                                                                                          | Description                                                                          |
-|---------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| [`synthesize()`](https://cuiweig.github.io/syntheticdata/reference/synthesize.md)                 | Generate synthetic data (parametric / bootstrap / noise)                             |
-| [`validate_synthetic()`](https://cuiweig.github.io/syntheticdata/reference/validate_synthetic.md) | Compute utility and privacy metrics (KS, AUC, NN ratio)                              |
-| [`compare_methods()`](https://cuiweig.github.io/syntheticdata/reference/compare_methods.md)       | Benchmark all 3 methods on the same dataset                                          |
-| [`privacy_risk()`](https://cuiweig.github.io/syntheticdata/reference/privacy_risk.md)             | Assess re-identification risk (NN ratio, membership inference, attribute disclosure) |
-| [`model_fidelity()`](https://cuiweig.github.io/syntheticdata/reference/model_fidelity.md)         | Train-on-synthetic, test-on-real predictive model comparison                         |
+| Function | Description |
+|----|----|
+| [`synthesize()`](https://cuiweig.github.io/syntheticdata/reference/synthesize.md) | Generate synthetic data (parametric / bootstrap / noise) |
+| [`validate_synthetic()`](https://cuiweig.github.io/syntheticdata/reference/validate_synthetic.md) | Compute utility and privacy metrics (KS, AUC, NN ratio) |
+| [`compare_methods()`](https://cuiweig.github.io/syntheticdata/reference/compare_methods.md) | Benchmark all 3 methods on the same dataset |
+| [`privacy_risk()`](https://cuiweig.github.io/syntheticdata/reference/privacy_risk.md) | Assess re-identification risk (NN ratio, membership inference, attribute disclosure) |
+| [`model_fidelity()`](https://cuiweig.github.io/syntheticdata/reference/model_fidelity.md) | Train-on-synthetic, test-on-real predictive model comparison |
 
 ------------------------------------------------------------------------
 
